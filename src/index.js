@@ -8,11 +8,14 @@ axios.defaults.baseURL = 'https://pixabay.com/api/';
 function fetchImages(searchQuery, page) {
   axios
     .get(
-      `?key=40081345-2806d7337f047551466163511&q=${searchQuery}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}`
+      `?key=40081345-2806d7337f047551466163511&q=${searchQuery}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=40`
     )
     .then(handleImagesResponse)
     .catch(handleError);
 }
+
+const lightbox = new SimpleLightbox('.gallery a');
+const loadMoreButton = document.querySelector('.load-more');
 
 function handleImagesResponse(response) {
   const images = response.data.hits;
@@ -22,14 +25,21 @@ function handleImagesResponse(response) {
     displayImages(images);
     showTotalHitsMessage(response.data.totalHits);
 
-    const lightbox = new SimpleLightbox('.gallery a');
+    lightbox.refresh();
+
+    if (images.length < 40) {
+      loadMoreButton.style.display = 'none';
+      Notiflix.Notify.info(
+        "We're sorry, but you've reached the end of search results."
+      );
+    }
   }
 }
 
 function showTotalHitsMessage(totalHits) {
   Notiflix.Notify.success(`Hooray! We found ${totalHits} images.`);
 
-  document.querySelector('.load-more').style.display = 'block';
+  loadMoreButton.style.display = 'block';
 }
 
 function handleError(error) {
@@ -47,7 +57,7 @@ function displayImage(image) {
     <a href="${image.largeImageURL}" data-lightbox="image">
       <img src="${image.webformatURL}" alt="${image.tags}" loading="lazy" />
     </a>
-    <div class="info">
+    <div class "info">
       <p class="info-item"><b>Likes:</b> ${image.likes}</p>
       <p class="info-item"><b>Views:</b> ${image.views}</p>
       <p class="info-item"><b>Comments:</b> ${image.comments}</p>
@@ -58,6 +68,7 @@ function displayImage(image) {
 }
 
 function showNoResultsMessage() {
+  loadMoreButton.style.display = 'none';
   Notiflix.Notify.failure(
     'Sorry, there are no images matching your search query. Please try again.'
   );
@@ -65,7 +76,6 @@ function showNoResultsMessage() {
 
 const searchForm = document.getElementById('search-form');
 const gallery = document.querySelector('.gallery');
-const loadMoreButton = document.querySelector('.load-more');
 let page = 1;
 
 searchForm.addEventListener('submit', handleSubmitForm);
